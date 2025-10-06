@@ -3,15 +3,14 @@ trigger:
     include:
       - main
 
-variables:
-  # Variables de entorno
-  ACR_NAME: 'gr_devops_sem8_grp12' 
-  IMAGE_NAME: 'mybdmysql' 
+variables:  
+  ACR_NAME: 'crdevops12sem8'
+  IMAGE_NAME: 'mybdmysql'
   SERVICE_CONNECTION_NAME: 'myappdevopssem08'
-  
 
 jobs:
   - job: BuildAndPush
+    displayName: 'Construir y subir imagen MySQL al ACR'
     pool:
       vmImage: 'ubuntu-latest'
     steps:
@@ -19,8 +18,8 @@ jobs:
         inputs:
           command: 'buildAndPush'
           containerRegistry: '$(SERVICE_CONNECTION_NAME)'
-          repository: '$(ACR_NAME).azurecr.io/$(IMAGE_NAME)'
+          repository: '$(IMAGE_NAME)'  
           dockerfile: '**/Dockerfile'
           tags: |
             latest
-        displayName: 'Build and Push Docker Image ACR'
+        displayName: 'Build and Push Docker Image to ACR'
