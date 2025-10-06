@@ -6,7 +6,7 @@ trigger:
 variables:
   # Variables de entorno
   ACR_NAME: 'gr_devops_sem8_grp12' 
-  IMAGE_NAME: 'myBDMySql' 
+  IMAGE_NAME: 'mybdmysql' 
   SERVICE_CONNECTION_NAME: 'myappdevopssem08'
   
 
