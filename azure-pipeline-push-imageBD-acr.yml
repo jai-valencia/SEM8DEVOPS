@@ -8,6 +8,7 @@ variables:
   ACR_NAME: 'gr_devops_sem8_grp12' 
   IMAGE_NAME: 'myBDMySql' 
   SERVICE_CONNECTION_NAME: 'myappdevopssem08'
+  
 
 jobs:
   - job: BuildAndPush
@@ -23,4 +24,3 @@ jobs:
           tags: |
             latest
         displayName: 'Build and Push Docker Image ACR'
-

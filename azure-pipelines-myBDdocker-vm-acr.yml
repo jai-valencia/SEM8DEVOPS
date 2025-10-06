@@ -4,11 +4,11 @@ trigger:
       - main
 
 variables:
-  VM_IP_PUBLICA: '20.171.26.117'  # Se debe colocar la IP pública de tu máquina virtual
-  IMAGE_NAME: 'gr_devops_sem8_grp12.azurecr.io/mybdmysql'  # Se debe colocar el Nombre de la imagen que será descargada desde ACR
-  ACR_NAME: 'crdevops12sem8' # Se debe colocar el Nombre de tu Azure Container Registry (ACR)
-  ACR_USERNAME: 'crdevops12sem08'  # Se debe colocar el Nombre de usuario del ACR
-  ACR_PASSWORD: '1YlO0kOy1wi44/TIg9sKqES7S2XYJhlOnXFGuZ+yq3+ACRAaflaR'  # Se debe colocar la Contraseña del ACR
+  VM_IP_PUBLICA: '20.171.26.117'
+  IMAGE_NAME: 'mybdmysql'
+  ACR_NAME: 'gr_devops_sem8_grp12'
+  ACR_USERNAME: 'crdevops12sem8'
+  ACR_PASSWORD: '1YlO0kOy1wi44/TIg9sKqES7S2XYJhlOnXFGuZ+yq3+ACRAaflaR'
 
 stages:
   - stage: Deploy
@@ -16,8 +16,8 @@ stages:
       - deployment: DeployToVM
         displayName: 'Deploy MySQL to VM'
         environment:
-          name: 'VMBDMySQL'  # Nombre del entorno configurado en Azure DevOps
-          resourceType: VirtualMachine  # Especifica que se conecta a una máquina virtual
+          name: 'VM_Linux'
+          resourceType: VirtualMachine
         strategy:
           runOnce:
             deploy:
@@ -25,14 +25,14 @@ stages:
                 - script: |
                     # Verificar e instalar Azure CLI en la máquina virtual
                     if ! command -v az &> /dev/null; then
-                      echo "Azure CLI no está instalado. Instalando Azure CLI..."
+                      echo "Instalando Azure CLI..."
                       export DEBIAN_FRONTEND=noninteractive
-                      sudo apt-get update && \
-                      sudo apt-get install -y curl && \
-                      curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash && \
+                      sudo apt-get update
+                      sudo apt-get install -y curl
+                      curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
                       az --version
                     else
-                      echo "Azure CLI ya está instalado."
+                      echo "Azure CLI ya está instalada."
                     fi
                   displayName: 'Verificar e Instalar Azure CLI'
                   failOnStderr: true
@@ -40,21 +40,22 @@ stages:
                 - script: |
                     # Verificar e instalar Docker en la máquina virtual
                     if ! command -v docker &> /dev/null; then
-                      echo "Docker no está instalado. Instalando Docker..."
+                      echo "Instalando Docker..."
                       export DEBIAN_FRONTEND=noninteractive
-                      sudo apt-get update && \
+                      sudo apt-get update
                       sudo apt-get install -y \
                         apt-transport-https \
                         ca-certificates \
                         curl \
                         gnupg \
-                        lsb-release && \
-                      curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
-                      echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null && \
-                      sudo apt-get update && \
-                      sudo apt-get install -y docker-ce docker-ce-cli containerd.io && \
-                      sudo systemctl start docker && \
-                      sudo systemctl enable docker && \
+                        lsb-release
+                      curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+                      echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] \
+                        https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+                      sudo apt-get update
+                      sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+                      sudo systemctl start docker
+                      sudo systemctl enable docker
                       sudo docker --version
                     else
                       echo "Docker ya está instalado."
@@ -63,35 +64,35 @@ stages:
                   failOnStderr: true
 
                 - script: |
-                    # Autenticarse en Azure Container Registry utilizando nombre de usuario y contraseña
-                    echo "Autenticándose en Azure Container Registry y ejecutando la imagen Docker..."
-                    echo ${ACR_PASSWORD} | sudo docker login ${ACR_NAME}.azurecr.io -u ${ACR_USERNAME} --password-stdin > /dev/null 2>&1
+                    echo "Autenticándose en Azure Container Registry..."
+                    echo ${ACR_PASSWORD} | sudo docker login ${ACR_NAME}.azurecr.io -u ${ACR_USERNAME} --password-stdin
 
-                    # Descargar la imagen desde ACR
+                    echo "Descargando imagen desde ACR..."
                     sudo docker pull ${ACR_NAME}.azurecr.io/${IMAGE_NAME}:latest
 
-                    # Verificar si el contenedor MySQL ya está en ejecución
+                    echo "Verificando si existe un contenedor anterior..."
                     if sudo docker ps -a --format '{{.Names}}' | grep -Eq "^mysql_container\$"; then
-                      echo "El contenedor 'mysql_container' ya existe. Iniciándolo nuevamente..."
-                      sudo docker start mysql_container
-                    else
-                      echo "El contenedor 'mysql_container' no existe. Creándolo y ejecutándolo..."
-                      sudo docker run -d -p 3306:3306 --name mysql_container \
-                        -e MYSQL_ROOT_PASSWORD=Password123 \
-                        -e MYSQL_DATABASE=my_database \
-                        -e MYSQL_USER=mysqluser \
-                        -e MYSQL_PASSWORD=Password123 \
-                        ${ACR_NAME}.azurecr.io/${ACR_NAME}.azurecr.io/${IMAGE_NAME}:latest
+                      echo "El contenedor 'mysql_container' ya existe. Eliminándolo..."
+                      sudo docker rm -f mysql_container
                     fi
 
+                    echo "Creando y ejecutando contenedor MySQL..."
+                    sudo docker run -d -p 3306:3306 --name mysql_container \
+                      -e MYSQL_ROOT_PASSWORD=Password123 \
+                      -e MYSQL_DATABASE=my_database \
+                      -e MYSQL_USER=mysqluser \
+                      -e MYSQL_PASSWORD=Password123 \
+                      ${ACR_NAME}.azurecr.io/${IMAGE_NAME}:latest
+
+                    echo "Contenedores activos:"
                     sudo docker ps
                   displayName: 'Descargar y ejecutar la imagen MySQL desde ACR'
                   failOnStderr: true
 
                 - script: |
-                    # Mostrar la URL para conectarse a MySQL
-                    echo "Conectar a MySQL en la máquina virtual con la IP: ${VM_IP_PUBLICA}, puerto: 3306"
-
+                    echo "✅ Despliegue completado correctamente"
+                    echo "Conectar a MySQL en la IP pública: ${VM_IP_PUBLICA}, puerto: 3306"
+                    echo "Usuario: mysqluser"
+                    echo "Password: Password123"
+                    echo "Base de datos: my_database"
                   displayName: 'Mostrar detalles de conexión a MySQL'
-
-
