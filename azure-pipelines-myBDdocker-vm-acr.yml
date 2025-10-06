@@ -5,94 +5,98 @@ trigger:
 
 variables:
   VM_IP_PUBLICA: '20.171.26.117'
-  IMAGE_NAME: 'mybdmysql'
-  ACR_NAME: 'crdevops12sem8'
-  ACR_USERNAME: 'crdevops12sem8'
+  ACR_NAME: 'crdevops12sem8'                 
+  IMAGE_NAME: 'mybdmysql'                     
+  ACR_USERNAME: 'crdevops12sem8'            
   ACR_PASSWORD: '1YlO0kOy1wi44/TIg9sKqES7S2XYJhlOnXFGuZ+yq3+ACRAaflaR'
 
 stages:
   - stage: Deploy
+    displayName: 'Desplegar MySQL en VM Linux'
     jobs:
       - deployment: DeployToVM
         displayName: 'Deploy MySQL to VM'
         environment:
           name: 'VM_Linux'
           resourceType: VirtualMachine
+
         strategy:
           runOnce:
             deploy:
               steps:
                 - script: |
-                    # Verificar e instalar Azure CLI en la máquina virtual
+                    echo "🔍 Verificando e instalando Azure CLI..."
                     if ! command -v az &> /dev/null; then
                       echo "Instalando Azure CLI..."
                       export DEBIAN_FRONTEND=noninteractive
-                      sudo apt-get update
+                      sudo apt-get update -y
                       sudo apt-get install -y curl
                       curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
                       az --version
                     else
-                      echo "Azure CLI ya está instalada."
+                      echo "✅ Azure CLI ya está instalada."
                     fi
-                  displayName: 'Verificar e Instalar Azure CLI'
+                  displayName: 'Instalar Azure CLI si no existe'
                   failOnStderr: true
 
                 - script: |
-                    # Verificar e instalar Docker en la máquina virtual
+                    echo "🐳 Verificando e instalando Docker..."
                     if ! command -v docker &> /dev/null; then
                       echo "Instalando Docker..."
                       export DEBIAN_FRONTEND=noninteractive
-                      sudo apt-get update
-                      sudo apt-get install -y \
-                        apt-transport-https \
-                        ca-certificates \
-                        curl \
-                        gnupg \
-                        lsb-release
+                      sudo apt-get update -y
+                      sudo apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
                       curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
                       echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] \
-                        https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-                      sudo apt-get update
+                        https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | \
+                        sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+                      sudo apt-get update -y
                       sudo apt-get install -y docker-ce docker-ce-cli containerd.io
                       sudo systemctl start docker
                       sudo systemctl enable docker
                       sudo docker --version
                     else
-                      echo "Docker ya está instalado."
+                      echo "✅ Docker ya está instalado."
                     fi
-                  displayName: 'Verificar e Instalar Docker'
+                  displayName: 'Instalar Docker si no existe'
                   failOnStderr: true
 
                 - script: |
-                    echo "Autenticándose en Azure Container Registry..."
-                    echo ${ACR_PASSWORD} | sudo docker login ${ACR_NAME}.azurecr.io -u ${ACR_USERNAME} --password-stdin
+                    echo "🔐 Autenticándose en Azure Container Registry..."
+                    echo "${ACR_PASSWORD}" | sudo docker login ${ACR_NAME}.azurecr.io -u ${ACR_USERNAME} --password-stdin
 
-                    echo "Descargando imagen desde ACR..."
+                    echo "📦 Descargando imagen desde ACR..."
                     sudo docker pull ${ACR_NAME}.azurecr.io/${IMAGE_NAME}:latest
 
-                    echo "Verificando si existe un contenedor anterior..."
+                    echo "🧹 Verificando si existe un contenedor previo..."
                     if sudo docker ps -a --format '{{.Names}}' | grep -Eq "^mysql_container\$"; then
                       echo "El contenedor 'mysql_container' ya existe. Eliminándolo..."
                       sudo docker rm -f mysql_container
                     fi
 
-                    echo "Creando y ejecutando contenedor MySQL..."
-                    sudo docker run -d -p 3306:3306 --name mysql_container \
+                    echo "🚀 Creando y ejecutando contenedor MySQL..."
+                    sudo docker run -d \
+                      --name mysql_container \
+                      -p 3306:3306 \
                       -e MYSQL_ROOT_PASSWORD=Password123 \
                       -e MYSQL_DATABASE=my_database \
                       -e MYSQL_USER=mysqluser \
                       -e MYSQL_PASSWORD=Password123 \
                       ${ACR_NAME}.azurecr.io/${IMAGE_NAME}:latest
 
-                    echo "Contenedores activos:"
+                    echo "✅ Contenedor desplegado correctamente. Contenedores activos:"
                     sudo docker ps
-                  displayName: 'Descargar y ejecutar la imagen MySQL desde ACR'
+                  displayName: 'Autenticarse, descargar y ejecutar imagen MySQL desde ACR'
                   failOnStderr: true
 
                 - script: |
-                    echo "✅ Despliegue completado correctamente"
-                    echo "Conectar a MySQL en la IP pública: ${VM_IP_PUBLICA}, puerto: 3306"
+                    echo "✅ Despliegue completado exitosamente."
+                    echo "-----------------------------------------"
+                    echo "🔗 Conectar a MySQL con los siguientes datos:"
+                    echo "Host: ${VM_IP_PUBLICA}"
+                    echo "Puerto: 3306"
                     echo "Usuario: mysqluser"
-                    echo "Password: Password123"
+                    echo "Contraseña: Password123"
                     echo "Base de datos: my_database"
+                    echo "-----------------------------------------"
                   displayName: 'Mostrar detalles de conexión a MySQL'
