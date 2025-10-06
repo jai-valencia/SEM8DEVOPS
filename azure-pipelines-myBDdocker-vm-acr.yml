@@ -7,7 +7,7 @@ variables:
   VM_IP_PUBLICA: '20.171.26.117'  # Se debe colocar la IP pública de tu máquina virtual
   IMAGE_NAME: 'mybdmysql'  # Se debe colocar el Nombre de la imagen que será descargada desde ACR
   ACR_NAME: 'crdevops12sem8' # Se debe colocar el Nombre de tu Azure Container Registry (ACR)
-  ACR_USERNAME: 'grp12sem08'  # Se debe colocar el Nombre de usuario del ACR
+  ACR_USERNAME: 'crdevops12sem08'  # Se debe colocar el Nombre de usuario del ACR
   ACR_PASSWORD: '1YlO0kOy1wi44/TIg9sKqES7S2XYJhlOnXFGuZ+yq3+ACRAaflaR'  # Se debe colocar la Contraseña del ACR
 
 stages:
@@ -93,3 +93,4 @@ stages:
                     echo "Conectar a MySQL en la máquina virtual con la IP: ${VM_IP_PUBLICA}, puerto: 3306"
 
                   displayName: 'Mostrar detalles de conexión a MySQL'
+
