@@ -6,7 +6,7 @@ trigger:
 variables:
   VM_IP_PUBLICA: '20.171.26.117'
   IMAGE_NAME: 'mybdmysql'
-  ACR_NAME: 'gr_devops_sem8_grp12'
+  ACR_NAME: 'crdevops12sem8'
   ACR_USERNAME: 'crdevops12sem8'
   ACR_PASSWORD: '1YlO0kOy1wi44/TIg9sKqES7S2XYJhlOnXFGuZ+yq3+ACRAaflaR'
 
