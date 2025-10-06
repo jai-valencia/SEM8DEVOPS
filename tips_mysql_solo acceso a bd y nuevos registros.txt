@@ -1,0 +1,21 @@
+################# ENTRAR A MYSQL EN DOCKER #################
+
+docker exec -it mysql_container mysql -u root -p
+
+Enter Pass: Password123
+
+##########################################################################################
+
+-- Acceder a la base de datos
+USE my_database;
+
+
+-- Insertar registros
+INSERT INTO users (username, email) VALUES ('usuario1', 'usuario1@example.com');
+INSERT INTO users (username, email) VALUES ('usuario2', 'usuario2@example.com');
+
+-- Consultar registros
+SELECT * FROM users;
+
+-- Salir de MySQL
+EXIT;
