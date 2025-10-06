@@ -1,0 +1,25 @@
+trigger:
+  branches:
+    include:
+      - main
+
+variables:
+  # Variables de entorno
+  ACR_NAME: 'GR_DEVOPS_SEM8_GRP12' 
+  IMAGE_NAME: 'myBDMySql' 
+  SERVICE_CONNECTION_NAME: 'myappdevopssem08'
+
+jobs:
+  - job: BuildAndPush
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+      - task: Docker@2
+        inputs:
+          command: 'buildAndPush'
+          containerRegistry: '$(SERVICE_CONNECTION_NAME)'
+          repository: '$(ACR_NAME).azurecr.io/$(IMAGE_NAME)'
+          dockerfile: '**/Dockerfile'
+          tags: |
+            latest
+        displayName: 'Build and Push Docker Image ACR'
